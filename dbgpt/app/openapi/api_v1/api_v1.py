@@ -62,6 +62,24 @@ def __new_conversation(chat_mode, user_name: str, sys_code: str) -> Conversation
         sys_code=sys_code,
     )
 
+def get_all_list():
+    dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
+    all_list = []
+    for item in dbs:
+        params: dict = {}
+        params.update({"param": item["db_name"]})
+        params.update({"type": item["db_type"]})
+        all_list.append(params)
+    """return knowledge space list"""
+    request = KnowledgeSpaceRequest()
+    spaces = knowledge_service.get_knowledge_space(request)
+    for space in spaces:
+        params: dict = {}
+        params.update({"param": space.name})
+        params.update({"type": "space"})
+        all_list.append(params)
+    return all_list
+ 
 
 def get_db_list():
     dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
@@ -216,7 +234,7 @@ async def dialogue_scenes():
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
 async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
     if ChatScene.ChatWithDbQA.value() == chat_mode:
-        return Result.succ(get_db_list())
+        return Result.succ(get_all_list())
     elif ChatScene.ChatWithDbExecute.value() == chat_mode:
         return Result.succ(get_db_list())
     elif ChatScene.ChatDashboard.value() == chat_mode:
@@ -228,7 +246,7 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
     elif ChatScene.ChatKnowledge.ExtractRefineSummary.value() == chat_mode:
         return Result.succ(knowledge_list())
     else:
-        return Result.succ(None)
+        return Result.succ(get_all_list())
 
 
 @router.post("/v1/chat/mode/params/file/load")
@@ -277,9 +295,14 @@ def get_hist_messages(conv_uid: str):
 
 
 async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
+    if dialogue.user_input.startswith("小知"):
+        dialogue.chat_mode = ChatScene.ChatKnowledge.value()
+    elif dialogue.user_input.startswith("小助"):
+        dialogue.chat_mode = ChatScene.ChatNormal.value()
     logger.info(f"get_chat_instance:{dialogue}")
     if not dialogue.chat_mode:
-        dialogue.chat_mode = ChatScene.ChatNormal.value()
+         dialogue.chat_mode = ChatScene.ChatKnowledge.value()
+        # dialogue.chat_mode = ChatScene.ChatNormal.value()
     if not dialogue.conv_uid:
         conv_vo = __new_conversation(
             dialogue.chat_mode, dialogue.user_name, dialogue.sys_code
@@ -289,6 +312,9 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
     if not ChatScene.is_valid_mode(dialogue.chat_mode):
         raise StopAsyncIteration(f"Unsupported Chat Mode,{dialogue.chat_mode}!")
 
+
+   
+        
     chat_param = {
         "chat_session_id": dialogue.conv_uid,
         "user_name": dialogue.user_name,
@@ -297,6 +323,7 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         "select_param": dialogue.select_param,
         "model_name": dialogue.model_name,
     }
+
     chat: BaseChat = await blocking_func_to_async(
         get_executor(),
         CHAT_FACTORY.get_implementation,

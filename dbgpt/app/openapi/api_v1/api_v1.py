@@ -277,6 +277,12 @@ async def params_load(
                 user_name=user_name,
                 sys_code=sys_code,
             )
+            if dialogue.user_input.startswith("小知"):
+                dialogue.chat_mode = ChatScene.ChatKnowledge.value()
+            elif dialogue.user_input.startswith("小助"):
+                dialogue.chat_mode = ChatScene.ChatNormal.value()
+
+
             chat: BaseChat = await get_chat_instance(dialogue)
             resp = await chat.prepare()
 
@@ -347,6 +353,10 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
 
 @router.post("/v1/chat/completions")
 async def chat_completions(dialogue: ConversationVo = Body()):
+    if dialogue.user_input.startswith("小知"):
+        dialogue.chat_mode = ChatScene.ChatKnowledge.value()
+    elif dialogue.user_input.startswith("小助"):
+        dialogue.chat_mode = ChatScene.ChatNormal.value()
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )

@@ -277,10 +277,19 @@ async def params_load(
                 user_name=user_name,
                 sys_code=sys_code,
             )
+            
             if dialogue.user_input.startswith("小知"):
                 dialogue.chat_mode = ChatScene.ChatKnowledge.value()
+                dialogue.user_input.removeprefix("小知")
             elif dialogue.user_input.startswith("小助"):
-                dialogue.chat_mode = ChatScene.ChatNormal.value()
+                 dialogue.chat_mode = ChatScene.ChatNormal.value()
+                 dialogue.user_input.removeprefix("小助")
+            elif dialogue.user_input.startswith("小库"):
+                 dialogue.chat_mode = ChatScene.ChatWithDbQA.value()
+                 dialogue.user_input.removeprefix("小库")
+            elif dialogue.user_input.startswith("小数"):
+                 dialogue.chat_mode = ChatScene.ChatWithDbExecute.value()
+                 dialogue.user_input.removeprefix("小数")   
 
 
             chat: BaseChat = await get_chat_instance(dialogue)
@@ -303,8 +312,16 @@ def get_hist_messages(conv_uid: str):
 async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
     if dialogue.user_input.startswith("小知"):
         dialogue.chat_mode = ChatScene.ChatKnowledge.value()
+        dialogue.user_input.removeprefix("小知")
     elif dialogue.user_input.startswith("小助"):
         dialogue.chat_mode = ChatScene.ChatNormal.value()
+        dialogue.user_input.removeprefix("小助")
+    elif dialogue.user_input.startswith("小库"):
+        dialogue.chat_mode = ChatScene.ChatWithDbQA.value()
+        dialogue.user_input.removeprefix("小库")
+    elif dialogue.user_input.startswith("小数"):
+        dialogue.chat_mode = ChatScene.ChatWithDbExecute.value()
+        dialogue.user_input.removeprefix("小数")
     logger.info(f"get_chat_instance:{dialogue}")
     if not dialogue.chat_mode:
          dialogue.chat_mode = ChatScene.ChatKnowledge.value()
@@ -355,8 +372,16 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
 async def chat_completions(dialogue: ConversationVo = Body()):
     if dialogue.user_input.startswith("小知"):
         dialogue.chat_mode = ChatScene.ChatKnowledge.value()
+        dialogue.user_input.removeprefix("小知")
     elif dialogue.user_input.startswith("小助"):
         dialogue.chat_mode = ChatScene.ChatNormal.value()
+        dialogue.user_input.removeprefix("小助")
+    elif dialogue.user_input.startswith("小库"):
+        dialogue.chat_mode = ChatScene.ChatWithDbQA.value()
+        dialogue.user_input.removeprefix("小库")
+    elif dialogue.user_input.startswith("小数"):
+        dialogue.chat_mode = ChatScene.ChatWithDbExecute.value()
+        dialogue.user_input.removeprefix("小数")
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )
